@@ -33,4 +33,3 @@ const ResumeSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("Resume", ResumeSchema);
-

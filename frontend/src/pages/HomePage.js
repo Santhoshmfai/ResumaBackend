@@ -1,15 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+
 
 const HomePage = () => {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [userInitial, setUserInitial] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
+        fetchUserDetails(); // Fetch username on component mount
         fetchProtectedData(); // Fetch protected data when the page loads
     }, []);
+
+    const fetchUserDetails = () => {
+        const token = localStorage.getItem("token");
+
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                if (decoded.username) {
+                    setUserInitial(decoded.username.charAt(0).toUpperCase()); // Extract first letter
+                }
+            } catch (error) {
+                console.error("Error decoding token:", error);
+                localStorage.removeItem("token");
+                navigate("/login");
+            }
+        } else {
+            navigate("/login");
+        }
+    };
 
     const fetchProtectedData = async () => {
         const token = localStorage.getItem("token");
@@ -26,7 +49,7 @@ const HomePage = () => {
                 headers: { "Authorization": `Bearer ${token}` },
             });
     
-            if (response.status === 401) { // Token expired or unauthorized
+            if (response.status === 401) { 
                 console.log("Token expired. Redirecting to login.");
                 localStorage.removeItem("token");
                 navigate("/login");
@@ -39,7 +62,6 @@ const HomePage = () => {
             console.error("Error fetching protected data:", error);
         }
     };
-    
 
     const handleFileChange = (event) => {
         const selectedFile = event.target.files[0];
@@ -88,8 +110,6 @@ const HomePage = () => {
             const result = await response.json();
             
             if (response.ok && result.success && result.data) {
-                // Ensure result.data is passed correctly
-                
                 console.log("API Response:", result.data);
                 navigate("/result", { state: { data: result.data } });
             } else {
@@ -104,7 +124,26 @@ const HomePage = () => {
 
     return (
         <div className="container">
-            <h1>Resume Analysis</h1>
+            <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <h1>Resume Analysis</h1>
+                {userInitial && (
+                    <div style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "50%",
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "20px",
+                        fontWeight: "bold",
+                    }}>
+                        {userInitial}
+                    </div>
+                )}
+            </nav>
+
             <form onSubmit={handleSubmit}>
                 <input
                     type="file"
@@ -123,3 +162,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
